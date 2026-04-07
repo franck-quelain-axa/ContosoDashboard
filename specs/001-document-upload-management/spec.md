@@ -5,6 +5,16 @@
 **Status**: Draft  
 **Input**: User description: "--file StakeholderDocs/document-upload-and-management-feature.md"
 
+## Clarifications
+
+### Session 2026-04-07
+
+- Q: What document access permissions does the Team Lead role have beyond those of a regular Employee? → A: Team Leads have read-only access to all documents uploaded by members of their direct team(s); they can view and download those documents but cannot edit metadata or delete them.
+- Q: What does "team" mean in the context of document sharing — a separate managed group, or an existing construct? → A: "Team" means a project's membership; sharing with a team shares with all current members of a selected project.
+- Q: What should happen when the virus/malware scanner is unavailable at upload time — block, queue, or allow? → A: Block the upload and surface a clear error; no unscanned file may be stored under any circumstances.
+- Q: What happens to documents when their uploading owner's account is deactivated or removed? → A: Documents are retained and ownership is transferred to a designated Administrator account.
+- Q: How is the "designated Administrator account" for ownership transfer identified? → A: Any active Administrator-role account; the system selects one automatically with no explicit designation required.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Upload a Document (Priority: P1)
@@ -157,9 +167,11 @@ An Administrator generates reports on document activity across the system, inclu
 - What happens when a user loses connectivity mid-upload? The system displays an error message and allows the user to retry.
 - What happens when a document is deleted while another user is in the middle of previewing it? The system surfaces a clear "document no longer available" message.
 - What happens when two users upload files with the same original filename? Documents are identified by system-assigned identifiers; names are not globally unique and both files are stored without collision.
-- What happens when a document is shared with an entire team and one of those users later leaves the team? Access is revoked when team membership ends.
+- What happens when a document is shared with a project team and one of those users later leaves the project? Access is revoked automatically when the user is removed from the project's membership.
 - What happens when a browser cannot render PDF previews natively? The system falls back to a download prompt.
 - What happens when a file fails the virus/malware scan? The upload is rejected, the file is not stored, and the user receives a clear error message.
+- What happens when the virus/malware scanner service is unavailable at upload time? The upload is blocked entirely; the user receives a clear error message and no file is stored until the scanner is reachable.
+- What happens when a document owner's account is deactivated or removed from the system? All documents owned by that user are retained and their ownership is transferred to a designated Administrator account.
 
 ## Requirements *(mandatory)*
 
@@ -185,22 +197,24 @@ An Administrator generates reports on document activity across the system, inclu
 - **FR-018**: System MUST allow users to search documents by title, description, tags, uploader name, and associated project.
 - **FR-019**: Search results MUST respect access permissions; users MUST NOT see documents they do not have permission to access.
 - **FR-020**: Search results MUST be returned within 2 seconds.
-- **FR-021**: System MUST allow document owners to share documents with specific users or teams.
+- **FR-021**: System MUST allow document owners to share documents with specific individual users or with the full membership of a project (referred to as sharing with a "team"); sharing with a project team grants access to all current members of that project.
 - **FR-022**: System MUST deliver an in-app notification to recipients when a document is shared with them.
-- **FR-023**: System MUST display received shared documents in a "Shared with Me" section visible to the recipient.
+- **FR-023**: System MUST display received shared documents in a "Shared with Me" section visible to the recipient; documents shared via project-team sharing MUST appear for each individual project member.
 - **FR-024**: System MUST allow users to attach documents to tasks from the task detail page; attached documents MUST be automatically associated with the task's project.
 - **FR-025**: System MUST display a "Recent Documents" widget on the dashboard home page showing the current user's 5 most recently uploaded documents.
 - **FR-026**: System MUST deliver an in-app notification to project members when a new document is added to a project they belong to.
 - **FR-027**: System MUST log all document-related activities (uploads, downloads, deletions, share actions) with actor identity and timestamp.
 - **FR-028**: System MUST provide Administrators with activity reports showing most-uploaded document types, most active uploaders, and document access patterns.
 - **FR-029**: System MUST enforce access controls so users can only access documents they own, documents shared directly with them, or documents belonging to projects they are a member of.
-- **FR-030**: System MUST scan uploaded files for viruses and malware before completing storage; infected files MUST be rejected with a clear error message.
+- **FR-030**: System MUST scan uploaded files for viruses and malware before completing storage; infected files MUST be rejected with a clear error message. If the scanning service is unavailable or returns an error, the upload MUST be blocked and the user MUST be shown a clear error; no unscanned file may be stored.
+- **FR-031**: Team Leads MUST have read-only access (view and download) to all documents uploaded by members of their direct team(s); Team Leads MUST NOT be permitted to edit metadata or delete those documents.
+- **FR-032**: When a user account is deactivated or removed from the system, all documents previously owned by that user MUST be retained and their ownership MUST be transferred to any active Administrator-role account (selected automatically by the system); no documents are deleted as a result of account deactivation.
 
 ### Key Entities
 
 - **Document**: Represents a stored file and its metadata. Key attributes: unique system identifier, title, description, category, associated project (optional), tags, uploader, upload date and time, file size, file type. Relates to Users (uploader), Projects (optional), Tasks (optional), and Document Shares.
 - **Document Category**: A predefined classification label applied to a document at upload time. Allowed values: Project Documents, Team Resources, Personal Files, Reports, Presentations, Other.
-- **Document Share**: Records a sharing relationship between a document and a recipient (individual user or team). Attributes: document, recipient, share date, shared by.
+- **Document Share**: Records a sharing relationship between a document and a recipient. A recipient is either an individual user or a project (representing all current members of that project at the time of access checks). Attributes: document, recipient type (user or project), recipient reference, share date, shared by.
 - **Activity Log Entry**: An immutable record of a document-related event. Attributes: event type (upload / download / delete / share), document reference, actor identity, timestamp.
 
 ## Success Criteria *(mandatory)*
