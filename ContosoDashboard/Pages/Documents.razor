@@ -1,0 +1,467 @@
+@page "/documents"
+@using ContosoDashboard.Services
+@using ContosoDashboard.Models
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@attribute [Authorize]
+@inject IDocumentService DocumentService
+@inject IProjectService ProjectService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Documents</PageTitle>
+
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="h3">My Documents</h1>
+      <p class="text-muted">Upload, manage, and share your documents.</p>
+    </div>
+    <div class="col-auto align-self-center">
+      <button class="btn btn-primary" @onclick="ShowUploadModal">
+        <span class="bi bi-upload" aria-hidden="true"></span> Upload Document
+      </button>
+    </div>
+  </div>
+
+  @if (!string.IsNullOrEmpty(successMessage))
+  {
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <span class="bi bi-check-circle-fill" aria-hidden="true"></span> @successMessage
+      <button type="button" class="btn-close" @onclick="() => successMessage = null" aria-label="Close"></button>
+    </div>
+  }
+
+  @if (!string.IsNullOrEmpty(errorMessage))
+  {
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span class="bi bi-exclamation-triangle-fill" aria-hidden="true"></span> @errorMessage
+      <button type="button" class="btn-close" @onclick="() => errorMessage = null" aria-label="Close"></button>
+    </div>
+  }
+
+  @* ── Document List ─────────────────────────────────────────────────────── *@
+  @if (isLoading)
+  {
+    <div class="d-flex justify-content-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading…</span>
+      </div>
+    </div>
+  }
+  else if (documents == null || documents.Count == 0)
+  {
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <span class="bi bi-file-earmark fs-1 text-muted" aria-hidden="true"></span>
+        <p class="mt-3 text-muted">No documents yet. Upload your first document to get started.</p>
+      </div>
+    </div>
+  }
+  else
+  {
+    <div class="card">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Upload Date</th>
+                <th>File Size</th>
+                <th>Associated Project</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach (var doc in documents)
+              {
+                <tr>
+                  <td>
+                    <span class="bi bi-file-earmark-text me-1 text-muted" aria-hidden="true"></span>
+                    <span title="@doc.OriginalFileName">@doc.Title</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-secondary">@doc.Category</span>
+                  </td>
+                  <td>@doc.UploadedDate.ToString("dd MMM yyyy, HH:mm")</td>
+                  <td>@FormatFileSize(doc.FileSize)</td>
+                  <td>
+                    @if (doc.Project != null)
+                    {
+                      <span class="text-muted">@doc.Project.Name</span>
+                    }
+                    else
+                    {
+                      <span class="text-muted fst-italic">–</span>
+                    }
+                  </td>
+                  <td class="text-end">
+                    <a href="/documents/download/@doc.DocumentId" class="btn btn-sm btn-outline-secondary me-1"
+                       title="Download">
+                      <span class="bi bi-download" aria-hidden="true"></span>
+                    </a>
+                    <a href="/documents/download/@doc.DocumentId?preview=true" class="btn btn-sm btn-outline-secondary"
+                       target="_blank" title="Preview">
+                      <span class="bi bi-eye" aria-hidden="true"></span>
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+@* ── Upload Modal ──────────────────────────────────────────────────────────── *@
+@if (showUploadModal)
+{
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="uploadModalLabel">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadModalLabel">
+            <span class="bi bi-upload me-2" aria-hidden="true"></span>Upload Document
+          </h5>
+          <button type="button" class="btn-close" @onclick="CloseUploadModal" aria-label="Close"
+                  disabled="@isUploading"></button>
+        </div>
+
+        <div class="modal-body">
+
+          @if (!string.IsNullOrEmpty(uploadErrorMessage))
+          {
+            <div class="alert alert-danger">
+              <span class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></span>@uploadErrorMessage
+            </div>
+          }
+
+          @* File picker *@
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              File <span class="text-danger">*</span>
+            </label>
+            <InputFile @key="fileInputKey" OnChange="OnFileSelected" class="form-control"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png" disabled="@isUploading" />
+            @if (selectedFile != null)
+            {
+              <div class="form-text">
+                Selected: <strong>@selectedFile.Name</strong>
+                (@FormatFileSize(selectedFile.Size))
+              </div>
+            }
+            <div class="form-text text-muted">
+              Supported: PDF, Word, Excel, PowerPoint, TXT, JPG, PNG — max 25 MB
+            </div>
+          </div>
+
+          @* Title *@
+          <div class="mb-3">
+            <label for="uploadTitle" class="form-label fw-semibold">
+              Title <span class="text-danger">*</span>
+            </label>
+            <input id="uploadTitle" type="text" class="form-control" @bind="uploadTitle"
+                   placeholder="Enter a descriptive title" maxlength="255" disabled="@isUploading" />
+          </div>
+
+          @* Category *@
+          <div class="mb-3">
+            <label for="uploadCategory" class="form-label fw-semibold">
+              Category <span class="text-danger">*</span>
+            </label>
+            <select id="uploadCategory" class="form-select" @bind="uploadCategory" disabled="@isUploading">
+              <option value="">— Select a category —</option>
+              @foreach (var cat in DocumentCategories.All)
+              {
+                <option value="@cat">@cat</option>
+              }
+            </select>
+          </div>
+
+          @* Description *@
+          <div class="mb-3">
+            <label for="uploadDescription" class="form-label">Description</label>
+            <textarea id="uploadDescription" class="form-control" rows="3" @bind="uploadDescription"
+                      placeholder="Optional description…" maxlength="2000" disabled="@isUploading"></textarea>
+          </div>
+
+          @* Associated Project *@
+          <div class="mb-3">
+            <label for="uploadProject" class="form-label">Associated Project</label>
+            <select id="uploadProject" class="form-select" @bind="uploadProjectId" disabled="@isUploading">
+              <option value="">— None —</option>
+              @foreach (var p in userProjects)
+              {
+                <option value="@p.ProjectId">@p.Name</option>
+              }
+            </select>
+          </div>
+
+          @* Tags *@
+          <div class="mb-3">
+            <label for="uploadTags" class="form-label">Tags</label>
+            <input id="uploadTags" type="text" class="form-control" @bind="uploadTags"
+                   placeholder="Comma-separated tags (e.g. invoice, Q1, finance)" maxlength="500" disabled="@isUploading" />
+            <div class="form-text text-muted">Separate multiple tags with commas.</div>
+          </div>
+
+          @* Upload progress *@
+          @if (isUploading)
+          {
+            <div class="d-flex align-items-center gap-2 mt-3">
+              <div class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></div>
+              <span class="text-muted">Uploading and scanning file, please wait…</span>
+            </div>
+          }
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @onclick="CloseUploadModal" disabled="@isUploading">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" @onclick="HandleUpload"
+                  disabled="@(isUploading || selectedFile == null)">
+            @if (isUploading)
+            {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <span>Uploading…</span>
+            }
+            else
+            {
+              <span class="bi bi-upload me-1" aria-hidden="true"></span>
+              <span>Upload</span>
+            }
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+  // ── State: page ──────────────────────────────────────────────────────────
+
+  private int currentUserId;
+  private List<Document>? documents;
+  private bool isLoading = true;
+  private string? errorMessage;
+  private string? successMessage;
+
+  // ── State: modal ─────────────────────────────────────────────────────────
+
+  private bool showUploadModal;
+  private bool isUploading;
+  private string? uploadErrorMessage;
+
+  // Form fields
+  private Microsoft.AspNetCore.Components.Forms.IBrowserFile? selectedFile;
+  private string fileInputKey = Guid.NewGuid().ToString(); // force re-render on reset
+  private string uploadTitle = string.Empty;
+  private string uploadCategory = string.Empty;
+  private string? uploadDescription;
+  private string uploadProjectId = string.Empty; // stored as string for <select> binding
+  private string? uploadTags;
+
+  // Supporting data
+  private List<Project> userProjects = new();
+
+  // ── Lifecycle ────────────────────────────────────────────────────────────
+
+  protected override async Task OnInitializedAsync()
+  {
+    var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+    var user = authState.User;
+    var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+
+    if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+    {
+      currentUserId = userId;
+    }
+
+    if (currentUserId > 0)
+    {
+      await Task.WhenAll(
+          LoadDocumentsAsync(),
+          LoadUserProjectsAsync()
+      );
+    }
+
+    isLoading = false;
+  }
+
+  // ── Data loading ─────────────────────────────────────────────────────────
+
+  private async Task LoadDocumentsAsync()
+  {
+    try
+    {
+      documents = await DocumentService.GetMyDocumentsAsync(currentUserId);
+    }
+    catch (Exception ex)
+    {
+      errorMessage = $"Could not load documents: {ex.Message}";
+      documents = new List<Document>();
+    }
+  }
+
+  private async Task LoadUserProjectsAsync()
+  {
+    try
+    {
+      userProjects = await ProjectService.GetUserProjectsAsync(currentUserId);
+    }
+    catch
+    {
+      userProjects = new List<Project>();
+    }
+  }
+
+  // ── Modal helpers ────────────────────────────────────────────────────────
+
+  private void ShowUploadModal()
+  {
+    ResetUploadForm();
+    showUploadModal = true;
+  }
+
+  private void CloseUploadModal()
+  {
+    if (!isUploading)
+    {
+      showUploadModal = false;
+      ResetUploadForm();
+    }
+  }
+
+  private void ResetUploadForm()
+  {
+    selectedFile = null;
+    fileInputKey = Guid.NewGuid().ToString();
+    uploadTitle = string.Empty;
+    uploadCategory = string.Empty;
+    uploadDescription = null;
+    uploadProjectId = string.Empty;
+    uploadTags = null;
+    uploadErrorMessage = null;
+  }
+
+  // ── File selection ───────────────────────────────────────────────────────
+
+  private void OnFileSelected(Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs e)
+  {
+    selectedFile = e.File;
+
+    // Pre-fill title from filename if blank
+    if (string.IsNullOrWhiteSpace(uploadTitle) && selectedFile != null)
+    {
+      uploadTitle = System.IO.Path.GetFileNameWithoutExtension(selectedFile.Name);
+    }
+  }
+
+  // ── Upload handler (T021) ────────────────────────────────────────────────
+
+  private async Task HandleUpload()
+  {
+    uploadErrorMessage = null;
+
+    // Client-side guard: file must be selected
+    if (selectedFile == null)
+    {
+      uploadErrorMessage = "Please select a file to upload.";
+      return;
+    }
+
+    if (string.IsNullOrWhiteSpace(uploadTitle))
+    {
+      uploadErrorMessage = "Title is required.";
+      return;
+    }
+
+    if (string.IsNullOrWhiteSpace(uploadCategory))
+    {
+      uploadErrorMessage = "Please select a category.";
+      return;
+    }
+
+    isUploading = true;
+    StateHasChanged();
+
+    try
+    {
+      // R-001: Copy IBrowserFile stream to MemoryStream BEFORE any await suspension
+      // that may cross a Blazor render boundary.
+      var fileName = selectedFile.Name;
+      var fileSize = selectedFile.Size;
+      var mimeType = selectedFile.ContentType;
+
+      using var memStream = new System.IO.MemoryStream();
+      using (var fileStream = selectedFile.OpenReadStream(maxAllowedSize: 25L * 1024 * 1024))
+      {
+        await fileStream.CopyToAsync(memStream);
+      }
+
+      memStream.Position = 0;
+
+      // Clear the IBrowserFile reference so Blazor cannot reuse the invalidated stream
+      selectedFile = null;
+      fileInputKey = Guid.NewGuid().ToString(); // force InputFile component reset
+      StateHasChanged();
+
+      var projectId = int.TryParse(uploadProjectId, out int pid) ? (int?)pid : null;
+
+      var request = new UploadDocumentRequest(
+          Title: uploadTitle.Trim(),
+          Description: string.IsNullOrWhiteSpace(uploadDescription) ? null : uploadDescription.Trim(),
+          Category: uploadCategory,
+          Tags: string.IsNullOrWhiteSpace(uploadTags) ? null : uploadTags.Trim(),
+          ProjectId: projectId,
+          TaskId: null,
+          FileContent: memStream,
+          OriginalFileName: fileName,
+          MimeType: mimeType,
+          FileSize: fileSize
+      );
+
+      await DocumentService.UploadDocumentAsync(request, currentUserId);
+
+      showUploadModal = false;
+      ResetUploadForm();
+      successMessage = $"\"{request.Title}\" was uploaded successfully.";
+
+      // Refresh list
+      await LoadDocumentsAsync();
+    }
+    catch (DocumentUploadException ex)
+    {
+      uploadErrorMessage = ex.Message;
+    }
+    catch (Exception ex)
+    {
+      uploadErrorMessage = $"An unexpected error occurred: {ex.Message}";
+    }
+    finally
+    {
+      isUploading = false;
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  private static string FormatFileSize(long bytes)
+  {
+    return bytes switch
+    {
+      < 1024 => $"{bytes} B",
+      < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+      < 1024L * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+      _ => $"{bytes / (1024.0 * 1024 * 1024):F1} GB"
+    };
+  }
+}

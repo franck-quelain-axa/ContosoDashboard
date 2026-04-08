@@ -44,6 +44,11 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
+// Document management services
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<IFileScanner, MockFileScanner>(); // Swap for real scanner in production
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+
 // Add HttpContextAccessor for accessing user claims
 builder.Services.AddHttpContextAccessor();
 
@@ -56,7 +61,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.EnsureCreated(); // For development - use migrations in production
+        context.Database.Migrate(); // Apply pending migrations on startup
     }
     catch (Exception ex)
     {
@@ -107,6 +112,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

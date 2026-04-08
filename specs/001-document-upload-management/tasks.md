@@ -15,8 +15,8 @@
 
 **Purpose**: Configure the environment and storage settings required before any code is written.
 
-- [ ] T001 Add `FileStorage:BasePath` key with value `"AppData/uploads"` to `ContosoDashboard/appsettings.Development.json`
-- [ ] T002 Add `ContosoDashboard/AppData/` to `.gitignore` to prevent storing uploaded files in source control
+- [X] T001 Add `FileStorage:BasePath` key with value `"AppData/uploads"` to `ContosoDashboard/appsettings.Development.json`
+- [X] T002 Add `ContosoDashboard/AppData/` to `.gitignore` to prevent storing uploaded files in source control
 
 **Checkpoint**: Dev environment ready — storage path configured, uploads directory excluded from git.
 
@@ -28,20 +28,20 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 [P] Create `Document` entity with all properties, navigation properties, and `DocumentCategories` static class per data-model.md in `ContosoDashboard/Models/Document.cs`
-- [ ] T004 [P] Create `DocumentShare` entity and `ShareRecipientType` enum per data-model.md in `ContosoDashboard/Models/DocumentShare.cs`
-- [ ] T005 [P] Create `ActivityLog` entity and `DocumentActivityType` enum per data-model.md in `ContosoDashboard/Models/ActivityLog.cs`
-- [ ] T006 Add `DocumentShared` and `DocumentAddedToProject` values to the `NotificationType` enum in `ContosoDashboard/Models/Notification.cs`
-- [ ] T007 Add `Documents`, `DocumentShares`, `ActivityLogs` DbSets and configure all EF relationships, `OnDelete` behaviors, and performance indexes per data-model.md in `ContosoDashboard/Data/ApplicationDbContext.cs`
-- [ ] T008 Generate and apply EF Core migration: run `dotnet ef migrations add AddDocumentManagement` then `dotnet ef database update` in `ContosoDashboard/`
-- [ ] T009 [P] Create `IFileStorageService` interface with `UploadAsync`, `DownloadAsync`, `DeleteAsync`, and `GetUrlAsync` per contracts/service-interfaces.md in `ContosoDashboard/Services/IFileStorageService.cs`
-- [ ] T010 [P] Create `IFileScanner` interface and `ScanResult` enum (`Clean`, `Infected`, `ScannerUnavailable`) per contracts/service-interfaces.md in `ContosoDashboard/Services/IFileScanner.cs`
-- [ ] T011 [P] Create `IDocumentService` interface with all methods and supporting DTOs (`UploadDocumentRequest`, `UpdateDocumentMetadataRequest`, `ReplaceFileRequest`, `ShareDocumentRequest`, `DocumentFilter`, `ActivityLogFilter`) and `DocumentUploadException` per contracts/service-interfaces.md in `ContosoDashboard/Services/IDocumentService.cs`
-- [ ] T012 [P] Implement `LocalFileStorageService` using `System.IO`, resolving base path from `IConfiguration["FileStorage:BasePath"]` relative to `IWebHostEnvironment.ContentRootPath`, creating directories as needed in `ContosoDashboard/Services/LocalFileStorageService.cs`
-- [ ] T013 [P] Implement `MockFileScanner` that always returns `ScanResult.Clean` and emits a debug log message per research.md R-004 in `ContosoDashboard/Services/MockFileScanner.cs`
-- [ ] T014 [P] Create `DocumentService` class skeleton: `public class DocumentService : IDocumentService` with constructor injecting `ApplicationDbContext`, `IFileStorageService`, `IFileScanner`, and `INotificationService` in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T015 Register `IFileStorageService → LocalFileStorageService`, `IFileScanner → MockFileScanner`, and `IDocumentService → DocumentService` as scoped services in `ContosoDashboard/Program.cs`
-- [ ] T016 Add a **Documents** navigation link (visible to all authenticated users) in `ContosoDashboard/Shared/NavMenu.razor`
+- [X] T003 [P] Create `Document` entity with all properties, navigation properties, and `DocumentCategories` static class per data-model.md in `ContosoDashboard/Models/Document.cs`
+- [X] T004 [P] Create `DocumentShare` entity and `ShareRecipientType` enum per data-model.md in `ContosoDashboard/Models/DocumentShare.cs`
+- [X] T005 [P] Create `ActivityLog` entity and `DocumentActivityType` enum per data-model.md in `ContosoDashboard/Models/ActivityLog.cs`
+- [X] T006 Add `DocumentShared` and `DocumentAddedToProject` values to the `NotificationType` enum in `ContosoDashboard/Models/Notification.cs`
+- [X] T007 Add `Documents`, `DocumentShares`, `ActivityLogs` DbSets and configure all EF relationships, `OnDelete` behaviors, and performance indexes per data-model.md in `ContosoDashboard/Data/ApplicationDbContext.cs`
+- [X] T008 Generate and apply EF Core migration: run `dotnet ef migrations add AddDocumentManagement` then `dotnet ef database update` in `ContosoDashboard/`
+- [X] T009 [P] Create `IFileStorageService` interface with `UploadAsync`, `DownloadAsync`, `DeleteAsync`, and `GetUrlAsync` per contracts/service-interfaces.md in `ContosoDashboard/Services/IFileStorageService.cs`
+- [X] T010 [P] Create `IFileScanner` interface and `ScanResult` enum (`Clean`, `Infected`, `ScannerUnavailable`) per contracts/service-interfaces.md in `ContosoDashboard/Services/IFileScanner.cs`
+- [X] T011 [P] Create `IDocumentService` interface with all methods and supporting DTOs (`UploadDocumentRequest`, `UpdateDocumentMetadataRequest`, `ReplaceFileRequest`, `ShareDocumentRequest`, `DocumentFilter`, `ActivityLogFilter`) and `DocumentUploadException` per contracts/service-interfaces.md in `ContosoDashboard/Services/IDocumentService.cs`
+- [X] T012 [P] Implement `LocalFileStorageService` using `System.IO`, resolving base path from `IConfiguration["FileStorage:BasePath"]` relative to `IWebHostEnvironment.ContentRootPath`, creating directories as needed in `ContosoDashboard/Services/LocalFileStorageService.cs`
+- [X] T013 [P] Implement `MockFileScanner` that always returns `ScanResult.Clean` and emits a debug log message per research.md R-004 in `ContosoDashboard/Services/MockFileScanner.cs`
+- [X] T014 [P] Create `DocumentService` class skeleton: `public class DocumentService : IDocumentService` with constructor injecting `ApplicationDbContext`, `IFileStorageService`, `IFileScanner`, and `INotificationService` in `ContosoDashboard/Services/DocumentService.cs`
+- [X] T015 Register `IFileStorageService → LocalFileStorageService`, `IFileScanner → MockFileScanner`, and `IDocumentService → DocumentService` as scoped services in `ContosoDashboard/Program.cs`
+- [X] T016 Add a **Documents** navigation link (visible to all authenticated users) in `ContosoDashboard/Shared/NavMenu.razor`
 
 **Checkpoint**: Foundation complete — all models, DB tables, interfaces, and DI registrations are in place. All user story phases can now begin.
 
@@ -53,12 +53,12 @@
 
 **Independent Test**: Upload a PDF ≤ 25 MB with a title and category → document appears in the list with correct metadata, upload date, and uploader name. Attempt an `.exe` and a file > 25 MB → both are rejected with clear messages.
 
-- [ ] T017 [P] [US1] Implement `DocumentService.UploadDocumentAsync`: validate extension + MIME (whitelist), validate file size (≤ 25 MB), call `IFileScanner.ScanAsync`, generate GUID-based `FilePath`, call `IFileStorageService.UploadAsync`, insert `Document` record, insert `ActivityLog` (Uploaded), per research.md R-006 upload sequence in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T018 [P] [US1] Implement `DocumentService.CanUserAccessDocumentAsync` (6-condition access check per data-model.md) and `DocumentService.GetMyDocumentsAsync` (returns caller's own documents) in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T019 [P] [US1] Create `Documents.razor` page with `@page "/documents"`, `[Authorize]` attribute, `@inject IDocumentService`, and page-level `@code` section skeleton in `ContosoDashboard/Pages/Documents.razor`
-- [ ] T020 [US1] Add upload modal to `Documents.razor`: `<InputFile>` with `@key` attribute, title input (required), category dropdown (`DocumentCategories.All`), description textarea, project selector, tags input, progress indicator bound to an `isUploading` bool, and success/error message display in `ContosoDashboard/Pages/Documents.razor`
-- [ ] T021 [US1] Implement upload handler in `Documents.razor`: copy `IBrowserFile` to `MemoryStream` before any `await` (R-001 pattern), clear `IBrowserFile` reference, call `DocumentService.UploadDocumentAsync`, call `StateHasChanged()`, handle `DocumentUploadException` to display user-facing error in `ContosoDashboard/Pages/Documents.razor`
-- [ ] T022 [US1] Add document list table to `Documents.razor` bound to `DocumentService.GetMyDocumentsAsync`, displaying columns: Title, Category, Upload Date, File Size (formatted), Associated Project in `ContosoDashboard/Pages/Documents.razor`
+- [X] T017 [P] [US1] Implement `DocumentService.UploadDocumentAsync`: validate extension + MIME (whitelist), validate file size (≤ 25 MB), call `IFileScanner.ScanAsync`, generate GUID-based `FilePath`, call `IFileStorageService.UploadAsync`, insert `Document` record, insert `ActivityLog` (Uploaded), per research.md R-006 upload sequence in `ContosoDashboard/Services/DocumentService.cs`
+- [X] T018 [P] [US1] Implement `DocumentService.CanUserAccessDocumentAsync` (6-condition access check per data-model.md) and `DocumentService.GetMyDocumentsAsync` (returns caller's own documents) in `ContosoDashboard/Services/DocumentService.cs`
+- [X] T019 [P] [US1] Create `Documents.razor` page with `@page "/documents"`, `[Authorize]` attribute, `@inject IDocumentService`, and page-level `@code` section skeleton in `ContosoDashboard/Pages/Documents.razor`
+- [X] T020 [US1] Add upload modal to `Documents.razor`: `<InputFile>` with `@key` attribute, title input (required), category dropdown (`DocumentCategories.All`), description textarea, project selector, tags input, progress indicator bound to an `isUploading` bool, and success/error message display in `ContosoDashboard/Pages/Documents.razor`
+- [X] T021 [US1] Implement upload handler in `Documents.razor`: copy `IBrowserFile` to `MemoryStream` before any `await` (R-001 pattern), clear `IBrowserFile` reference, call `DocumentService.UploadDocumentAsync`, call `StateHasChanged()`, handle `DocumentUploadException` to display user-facing error in `ContosoDashboard/Pages/Documents.razor`
+- [X] T022 [US1] Add document list table to `Documents.razor` bound to `DocumentService.GetMyDocumentsAsync`, displaying columns: Title, Category, Upload Date, File Size (formatted), Associated Project in `ContosoDashboard/Pages/Documents.razor`
 
 **Checkpoint**: User Story 1 fully functional — upload works end-to-end with validation, scanning, storage, and list display.
 
